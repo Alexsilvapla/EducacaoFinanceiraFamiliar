@@ -1,0 +1,33 @@
+name: Compilar instalador Windows x64
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependências
+        run: python -m pip install --upgrade pip openpyxl pyinstaller
+      - name: Validar sintaxe
+        run: python -m py_compile app.py
+      - name: Testes automatizados
+        run: python tests/test_app.py
+      - name: Gerar executável Windows x64
+        run: pyinstaller --noconfirm --clean --windowed --onefile --name EducacaoFinanceiraFamiliar app.py
+      - name: Instalar Inno Setup
+        run: choco install innosetup --yes --no-progress
+      - name: Gerar instalador tradicional
+        shell: pwsh
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" EducacaoFinanceiraFamiliar.iss'
+      - name: Publicar instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: EducacaoFinanceiraFamiliar-Setup-Windows-x64
+          path: installer-output/EducacaoFinanceiraFamiliar-Setup-x64.exe
